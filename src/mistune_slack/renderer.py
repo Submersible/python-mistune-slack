@@ -1,0 +1,303 @@
+import re
+from typing import Any, ClassVar, Dict, Iterable, Literal, TypedDict
+
+import mistune
+from mistune.core import BlockState
+from typing_extensions import NotRequired
+
+
+class SlackBlockStateEnv(TypedDict):
+    # This isn't used, just a helpful reference
+    border: NotRequired[int]
+    bold: NotRequired[bool]
+    italic: NotRequired[bool]
+    strike: NotRequired[bool]
+    code: NotRequired[bool]
+    list_indent: NotRequired[int]
+    list_style: NotRequired[Literal["bullet", "ordered"]]
+
+
+class SlackRenderer(mistune.BaseRenderer):
+    NAME: ClassVar[Literal["slack"]] = "slack"  # type: ignore
+
+    RICH_TYPE = {"rich_text_section", "rich_text_list", "rich_text_preformatted", "rich_text_quote"}
+
+    HEADING_MAX_LENGTH = 150
+    HEADING_OVERFLOW_MESSAGE = " (OVERFLOW)"
+
+    BLOCK_CODE_SPILL_LANG_REGEXP = re.compile(
+        r"""^\n*(?P<lang>
+        bash|bigquery|c|c++|cpp|cs|csharp|css|csv|docker|dockerfile|go|golang|html|java|javascript|js|json
+        |jsonc|jsonl|kotlin|less|lua|makefile|markdown|md|objc|objectivec|perl|php|pl|postcss|powershell|ps
+        |ps1|py|python|r|rb|ruby|rust|sass|scala|scss|sh|shell|sql|stylus|swift|ts|typescript|xml|yaml|yml
+        )\n""",
+        flags=re.IGNORECASE | re.MULTILINE | re.VERBOSE,
+    )
+
+    LIST_MAX_INDENT = 6  # TODO double check this, doc says max 8, but block kit builder only shows 6
+
+    def __call__(self, tokens: Iterable[Dict[str, Any]], state: BlockState) -> list[dict]:  # type: ignore
+        blocks = []
+        last_rich_elements = None
+        sections = list(self.render_tokens(tokens, state))
+        for section in sections:
+            if section["type"] in self.RICH_TYPE:
+                if last_rich_elements is None:
+                    last_rich_elements = []
+                    blocks.append({"type": "rich_text", "elements": last_rich_elements})
+                last_rich_elements.append(section)
+            else:
+                last_rich_elements = None
+                blocks.append(section)
+        return blocks
+
+    def render_tokens(self, tokens: Iterable[Dict[str, Any]], state: BlockState) -> list[dict]:  # type: ignore
+        children = self.iter_tokens(tokens, state)
+        return [x for xs in children for x in xs]  # type: ignore
+
+    #################### Inline Level ####################
+    def slack_user(self, token, state: BlockState):
+        yield _add_style({"type": "user", "user_id": token["attrs"]["user_id"]}, state)
+
+    def slack_channel(self, token, state: BlockState):
+        yield _add_style({"type": "channel", "channel_id": token["attrs"]["channel_id"]}, state)
+
+    def slack_usergroup(self, token, state: BlockState):
+        yield _add_style({"type": "usergroup", "usergroup_id": token["attrs"]["usergroup_id"]}, state)
+
+    def slack_broadcast(self, token, state: BlockState):
+        yield _add_style({"type": "broadcast", "range": token["attrs"]["range"]}, state)
+
+    def slack_emoji(self, token, state: BlockState):
+        yield _add_style({"type": "emoji", "name": token["attrs"]["emoji"]}, state)
+
+    def text(self, token, state: BlockState):
+        text = token["raw"].replace("``", "`")  # TODO there has to be a better way
+        if text:
+            yield _add_style({"type": "text", "text": text}, state)
+
+    def link(self, token, state: BlockState):
+        children = self.render_tokens(token["children"], _get_next_state(state))
+        url = token["attrs"]["url"]
+        url = url.strip("\t\r\n ")
+        if not url:
+            yield from children
+        else:
+            style = _get_text_style_from_state(state)
+            text = ""
+            for child in children:
+                if child["type"] != "text" or "text" not in child:
+                    raise NotImplementedError(f"Cannot create child text, unknown child: {child}")
+                style = {**style, **child.get("style", {})}
+                text += child["text"]
+
+            item = {"type": "link", "text": text, "url": url}
+            if style:
+                item["style"] = style
+            yield item
+
+    def image(self, token, state: BlockState):
+        yield {"type": "text", "text": f"[@TODO image {token}]"}
+
+    def emphasis(self, token, state: BlockState):
+        yield from self.render_tokens(token["children"], _get_next_state(state, italic=True))
+
+    def strong(self, token, state: BlockState):
+        yield from self.render_tokens(token["children"], _get_next_state(state, bold=True))
+
+    def strikethrough(self, token, state: BlockState):
+        yield from self.render_tokens(token["children"], _get_next_state(state, strike=True))
+
+    def codespan(self, token, state: BlockState):
+        assert "raw" in token
+        assert "children" not in token
+        yield from self.render_token({"type": "text", "raw": token["raw"]}, _get_next_state(state, code=True))
+
+    def linebreak(self, token, state: BlockState):
+        yield {"type": "text", "text": "\n\n"}
+
+    def softbreak(self, token, state: BlockState):
+        yield {"type": "text", "text": "\n"}
+
+    def inline_html(self, token, state: BlockState):
+        yield from self.render_token({"type": "text", "raw": token["raw"]}, _get_next_state(state))
+
+    #################### Block Level ####################
+    def paragraph(self, token, state: BlockState):
+        children = self.render_tokens(token["children"], state)
+        border = state.env.get("border", 0)
+        if border == 0:
+            yield {"type": "rich_text_section", "elements": children}
+        else:
+            item = {"type": "rich_text_quote", "elements": children}
+            if border >= 2:
+                item["border"] = 1
+            yield item
+
+    def heading(self, token, state: BlockState):
+        # TODO make level >= 2 bold text (since Slack only supports 1 level of headings)
+        _level = token.get("attrs", {}).get("level", 1)
+
+        text = ""
+
+        def walk(obj):
+            nonlocal text
+
+            if obj["type"] == "text":
+                before, after = "", ""
+            elif obj["type"] == "emphasis":
+                before, after = "_", "_"
+            elif obj["type"] == "strong":
+                before, after = "**", "**"
+            elif obj["type"] == "strikethrough":
+                before, after = "~~", "~~"
+            elif obj["type"] == "codespan":
+                before, after = "`", "`"
+            elif obj["type"] == "inline_html":
+                before, after = "", ""
+            else:
+                raise NotImplementedError(f"Cannot create child text, unknown child: {obj}")
+
+            text += before
+            if "raw" in obj:
+                text += obj["raw"]
+            for child in obj.get("children", []):
+                walk(child)
+            text += after
+
+        for child in token["children"]:
+            walk(child)
+
+        if len(text) > self.HEADING_MAX_LENGTH:
+            text = text[: self.HEADING_MAX_LENGTH - len(self.HEADING_OVERFLOW_MESSAGE)] + self.HEADING_OVERFLOW_MESSAGE
+        text = text[: self.HEADING_MAX_LENGTH]  # Just incase!
+
+        yield {"type": "header", "text": {"type": "plain_text", "text": text}}
+
+    def blank_line(self, token, state: BlockState):
+        border = state.env.get("border", 0)
+        if border == 0:
+            yield {"type": "rich_text_section", "elements": [{"type": "text", "text": "\n"}]}
+        else:
+            item = {"type": "rich_text_quote", "elements": [{"type": "text", "text": "\n"}]}
+            if border >= 2:
+                item["border"] = 1
+            yield item
+
+    def thematic_break(self, token, state: BlockState):
+        yield {"type": "divider"}
+
+    def block_code(self, token, state: BlockState):
+        assert token["type"] == "block_code"
+        _lang = token.get("attr", {}).get("info", None)
+        text = token["raw"]
+
+        match = self.BLOCK_CODE_SPILL_LANG_REGEXP.match(text)
+        if match:
+            _lang = _lang or match.group("lang")
+            text = self.BLOCK_CODE_SPILL_LANG_REGEXP.sub("", text)
+        item = {
+            "type": "rich_text_preformatted",
+            "elements": [{"type": "text", "text": text}],
+        }
+        if state.env.get("border", 0) >= 1:
+            item["border"] = 1
+        yield item
+
+    def block_quote(self, token, state: BlockState):
+        child_state = _get_next_state(state, border=state.env.get("border", 0) + 1)
+        yield from self.render_tokens(token["children"], child_state)
+
+    def block_html(self, token, state: BlockState):
+        yield from self.render_token(
+            {
+                "type": "block_code",
+                "raw": token["raw"],
+                "style": "fenced",
+                "marker": "```",
+                "attrs": {"info": "html"},
+            },
+            state,
+        )
+
+    def list(self, token, state: BlockState):
+        list_indent = token["attrs"]["depth"]
+        list_style = "ordered" if token["attrs"]["ordered"] else "bullet"
+        child_state = _get_next_state(state, list_indent=list_indent, list_style=list_style)
+        yield from self.render_tokens(token["children"], child_state)
+
+    def list_item(self, token, state: BlockState):
+        try:
+            list_indent = state.env["list_indent"]
+            list_style = state.env["list_style"]
+            border = state.env.get("border", 0)
+        except Exception as e:
+            raise NotImplementedError(f"Block text can only be called from list item, got: {token}") from e
+        task_checked = token.get("attrs", {}).get("checked")
+
+        children = self.render_tokens(token["children"], state)
+        elements = []
+        nested_lists = []
+        added_task = False
+        for child in children:
+            if child["type"] == "rich_text_section":
+                if task_checked is not None and not added_task:
+                    check_mark = "✅ " if task_checked else "❌ "
+                    child["elements"] = [{"type": "text", "text": check_mark}, *child["elements"]]
+                    added_task = True
+                elements.append(child)
+            elif child["type"] == "rich_text_list":
+                nested_lists.append(child)
+            else:
+                raise NotImplementedError(f"Cannot create list item with child: {child}")
+
+        item = {"type": "rich_text_list", "style": list_style, "elements": elements}
+        if list_indent > 0:
+            if list_indent > self.LIST_MAX_INDENT:
+                list_indent = self.LIST_MAX_INDENT
+            item["indent"] = list_indent
+        if border >= 1:
+            item["border"] = 1
+        yield item
+        yield from nested_lists
+
+    def task_list_item(self, token, state: BlockState):
+        token = token.copy()
+        token["type"] = "list_item"
+        yield from self.render_token(token, state)
+
+    def block_text(self, token, state: BlockState):
+        try:
+            assert "list_indent" in state.env
+            assert "list_style" in state.env
+        except Exception as e:
+            raise NotImplementedError(f"Block text can only be called from list item, got: {token}") from e
+
+        children = self.render_tokens(token["children"], state)
+        yield {"type": "rich_text_section", "elements": children}
+
+
+def _get_next_state(state: BlockState, **kwargs) -> BlockState:
+    next_state = BlockState(state)
+    next_state.env = {**state.env, **kwargs}
+    return next_state
+
+
+def _get_text_style_from_state(state: BlockState):
+    style = {}
+    if state.env.get("bold", False):
+        style["bold"] = True
+    if state.env.get("italic", False):
+        style["italic"] = True
+    if state.env.get("strike", False):
+        style["strike"] = True
+    if state.env.get("code", False):
+        style["code"] = True
+    return style
+
+
+def _add_style(output, state: BlockState):
+    style = _get_text_style_from_state(state)
+    if style:
+        output["style"] = style
+    return output
