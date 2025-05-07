@@ -7,7 +7,7 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Before"
+                        "text": "Before\n\n"
                     }
                 ]
             },
@@ -23,13 +23,7 @@
                                 "text": "apples"
                             }
                         ]
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_list",
-                "style": "bullet",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -38,13 +32,7 @@
                                 "text": "bananas"
                             }
                         ]
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_list",
-                "style": "bullet",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -61,7 +49,7 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "After"
+                        "text": "\n\nAfter"
                     }
                 ]
             }

@@ -8,7 +8,7 @@ from rich.pretty import pprint
 from mistune_slack.util import render_slack_blocks_from_markdown
 
 TESTDATA_DIR = Path(__file__).resolve().parent / "testdata"
-EXAMPLE_PATH = TESTDATA_DIR / "kitchen_sink.md.txt"
+EXAMPLE_PATH = TESTDATA_DIR / "kitchen_sink.md"
 
 
 def example(*, open_browser: bool = True):

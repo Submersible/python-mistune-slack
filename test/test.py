@@ -7,7 +7,7 @@ TEST_DIR = Path(__file__).resolve().parent / "testdata"
 
 
 def test_kitchen_sink():
-    run_file("kitchen_sink", _save_test_data=True)
+    run_file("kitchen_sink")
 
 
 def test_everything_but_the_kitchen_sink() -> None:

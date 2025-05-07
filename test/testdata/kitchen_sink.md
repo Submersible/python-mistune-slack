@@ -1,4 +1,4 @@
-# This is a heading
+# This is a 1st level heading
 
 Okay, here's a demo output to test my markdown capabilities.
 
@@ -31,7 +31,7 @@ Okay, here's a demo output to test my markdown capabilities.
 
 Here is an example of inline `code`.
 
-## Code block
+## Code block (second level heading)
 
 *Code Block:*
 
@@ -40,7 +40,7 @@ def hello_world():
     print("Hello, world!")
 ```
 
-### This is another heading
+### This is another heading (3rd level)
 
 *Bold, Italics, Strikethrough, and Underline:*
 
@@ -61,7 +61,7 @@ def hello_world():
 > Nested blockquote
 >> Even deeper!
 
-*Mentions:*
+#### *Mentions:* (4th level)
 
 Hey <@UC123123>, check this out!
 
@@ -79,16 +79,15 @@ Useful for displaying code or configuration.
 
 *Tables (Note: Tables are not directly supported in Slack markdown, but here's how you might format it with spacing):*
 
-Column 1 | Column 2 | Column 3
-------- | -------- | --------
-Row 1   | Value 1  | Data 1
-Row 2   | Value 2  | Data 2
+| Column 1 | Column 2 | Column 3 |
+| -------- | -------- | -------- |
+| Row 1    | Value 1  | Data 1   |
+| Row 2    | Value 2  | Data 2   |
 
 *Emojis:*
-
 :smile: :rocket: :tada:
 
-*Task Lists:*
+###### *Task Lists:* (5-th level)
 
 - [x] Completed task
 - [ ] Incomplete task

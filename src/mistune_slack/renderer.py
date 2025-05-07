@@ -24,7 +24,8 @@ class SlackRenderer(mistune.BaseRenderer):
 
     HEADING_MAX_LENGTH = 150
     HEADING_OVERFLOW_MESSAGE = " (OVERFLOW)"
-    HEADING_USE_BOLD_GTE = 4
+    HEADING_USE_HEADER_LTE = 3
+    HEADING_ADD_DIVIDER_LTE = 2
 
     BLOCK_CODE_SPILL_LANG_REGEXP = re.compile(
         r"""^\n*(?P<lang>
@@ -37,19 +38,46 @@ class SlackRenderer(mistune.BaseRenderer):
 
     LIST_MAX_INDENT = 6  # TODO double check this, doc says max 8, but block kit builder only shows 6
 
+    DIVIDER_BLOCK = {"type": "divider"}
+
+    BLANK_LINE_PLACEHOLDER = {"type": "BLANK_LINE_PLACEHOLDER"}
+
+    MAX_NUMBER_OF_BLOCKS: int = 50  # TODO use this in some way
+
     def __call__(self, tokens: Iterable[Dict[str, Any]], state: BlockState) -> list[dict]:  # type: ignore
         blocks = []
-        last_rich_elements = None
+        is_first = True
+        last_section = None
+        last_rich_type = None
+        add_blank_line = False
         sections = list(self.render_tokens(tokens, state))
         for section in sections:
-            if section["type"] in self.RICH_TYPE:
-                if last_rich_elements is None:
-                    last_rich_elements = []
-                    blocks.append({"type": "rich_text", "elements": last_rich_elements})
-                last_rich_elements.append(section)
-            else:
-                last_rich_elements = None
+            if section == self.BLANK_LINE_PLACEHOLDER:
+                add_blank_line = True
+            elif section["type"] in self.RICH_TYPE:
+                if last_rich_type is None:
+                    last_rich_type = {"type": "rich_text", "elements": []}
+                    blocks.append(last_rich_type)
+                if (
+                    not is_first
+                    and not (last_section and last_section["type"] == "header")
+                    and not (last_section and last_section["type"] == "divider")
+                    and ((last_section and last_section["type"] != section["type"]) or add_blank_line)
+                ):
+                    last_rich_type["elements"].append(
+                        {"type": "rich_text_section", "elements": [{"type": "text", "text": "\n"}]}
+                    )
+                    add_blank_line = False
+                is_first = False
+                last_section = section
+                last_rich_type["elements"].append(section)
+                last_rich_type["elements"] = _collapse_rich(last_rich_type["elements"])
+            else:  # header / divider
                 blocks.append(section)
+                is_first = False
+                last_section = section
+                last_rich_type = None
+                add_blank_line = False
 
         # Strip and leading whitespace
         if (
@@ -129,7 +157,6 @@ class SlackRenderer(mistune.BaseRenderer):
                     raise NotImplementedError(f"Cannot create child text, unknown child: {child}")
                 style = {**style, **child.get("style", {})}
                 text += child["text"]
-
             item = {"type": "link", "text": text, "url": url}
             if style:
                 item["style"] = style
@@ -150,8 +177,10 @@ class SlackRenderer(mistune.BaseRenderer):
 
     def heading(self, token, state: BlockState):
         level = token["attrs"]["level"]
-        if level < self.HEADING_USE_BOLD_GTE:
+        if level <= self.HEADING_USE_HEADER_LTE:
             yield from self._heading_block(token, state)
+            if level <= self.HEADING_ADD_DIVIDER_LTE:
+                yield self.DIVIDER_BLOCK
         else:
             yield from self._heading_bold(token, state)
 
@@ -161,7 +190,7 @@ class SlackRenderer(mistune.BaseRenderer):
         assert len(pargraph_list) == 1 and pargraph_list[0]["type"] == "rich_text_section"
         paragraph = pargraph_list[0]
         elements = paragraph["elements"]
-        elements = [{"type": "text", "text": "\n\n"}, *elements]
+        elements = [{"type": "text", "text": "\n"}, *elements]
         elements = _collapse_rich_text_elements(elements)
         yield {**paragraph, "elements": elements}
 
@@ -203,10 +232,10 @@ class SlackRenderer(mistune.BaseRenderer):
         yield {"type": "header", "text": {"type": "plain_text", "text": text}}
 
     def blank_line(self, token, state: BlockState):
-        yield from []
+        yield self.BLANK_LINE_PLACEHOLDER
 
     def thematic_break(self, token, state: BlockState):
-        yield {"type": "divider"}
+        yield self.DIVIDER_BLOCK
 
     def block_code(self, token, state: BlockState):
         _lang = token.get("attr", {}).get("info", None)
@@ -265,6 +294,8 @@ class SlackRenderer(mistune.BaseRenderer):
                 elements.append(child)
             elif child["type"] == "rich_text_list":
                 nested_lists.append(child)
+            elif child == self.BLANK_LINE_PLACEHOLDER:
+                elements.append({"type": "rich_text_section", "elements": [{"type": "text", "text": "\n"}]})
             else:
                 raise NotImplementedError(f"Cannot create list item with child: {child}")
 
@@ -322,8 +353,36 @@ def _add_style(output, state: BlockState):
     return output
 
 
-def _is_all_newlines(text: str) -> bool:
-    return text.replace("\n", "") == ""
+def _collapse_rich(sections: list[dict]) -> list[dict]:
+    # TODO collapse rich_text_quote
+    # TODO collapse rich_text_list
+    collapsed = []
+    last_section = None
+    for section in sections:
+        if section["type"] == "rich_text_section" and last_section and last_section["type"] == "rich_text_section":
+            elements = [*last_section["elements"], {"type": "text", "text": "\n"}, *section["elements"]]
+            last_section["elements"] = _collapse_rich_text_elements(elements)
+        elif (
+            section["type"] == "rich_text_list"
+            and last_section
+            and last_section["type"] == "rich_text_list"
+            and section.get("style") == last_section.get("style")
+            and section.get("indent") == last_section.get("indent")
+            and section.get("border") == last_section.get("border")
+        ):
+            last_section["elements"] = [*last_section["elements"], *section["elements"]]
+        elif (
+            section["type"] == "rich_text_quote"
+            and last_section
+            and last_section["type"] == "rich_text_quote"
+            and section.get("border") == last_section.get("border")
+        ):
+            last_section["elements"] = [*last_section["elements"], *section["elements"]]
+        else:
+            section = section.copy()
+            collapsed.append(section)
+            last_section = section
+    return collapsed
 
 
 def _collapse_rich_text_elements(elements: list[dict]) -> list[dict]:
@@ -349,3 +408,7 @@ def _collapse_rich_text_elements(elements: list[dict]) -> list[dict]:
             last_text_element = None
             collapsed.append(item)
     return collapsed
+
+
+def _is_all_newlines(text: str) -> bool:
+    return text.replace("\n", "") == ""

@@ -3,8 +3,11 @@
         "type": "header",
         "text": {
             "type": "plain_text",
-            "text": "This is a heading"
+            "text": "This is a 1st level heading"
         }
+    },
+    {
+        "type": "divider"
     },
     {
         "type": "rich_text",
@@ -14,7 +17,7 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Okay, here's a demo output to test my markdown capabilities."
+                        "text": "Okay, here's a demo output to test my markdown capabilities.\n\n"
                     }
                 ]
             },
@@ -48,14 +51,7 @@
                                 "text": "First item"
                             }
                         ]
-                    }
-                ],
-                "indent": 1
-            },
-            {
-                "type": "rich_text_list",
-                "style": "ordered",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -80,14 +76,7 @@
                                 "text": "Nested item 1"
                             }
                         ]
-                    }
-                ],
-                "indent": 2
-            },
-            {
-                "type": "rich_text_list",
-                "style": "ordered",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -112,14 +101,7 @@
                                 "text": "Bullet inside ordered list"
                             }
                         ]
-                    }
-                ],
-                "indent": 3
-            },
-            {
-                "type": "rich_text_list",
-                "style": "bullet",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -175,14 +157,7 @@
                                 "text": "First bullet"
                             }
                         ]
-                    }
-                ],
-                "indent": 1
-            },
-            {
-                "type": "rich_text_list",
-                "style": "bullet",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -207,14 +182,7 @@
                                 "text": "Numbered list inside bullet"
                             }
                         ]
-                    }
-                ],
-                "indent": 2
-            },
-            {
-                "type": "rich_text_list",
-                "style": "ordered",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -253,6 +221,15 @@
                             {
                                 "type": "text",
                                 "text": "Nested Lists (Mixed):"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "rich_text_section",
+                        "elements": [
+                            {
+                                "type": "text",
+                                "text": "\n"
                             }
                         ]
                     }
@@ -343,16 +320,11 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Code:",
+                        "text": "\n\nCode:\n\n\n",
                         "style": {
                             "italic": true
                         }
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
                     {
                         "type": "text",
                         "text": "Here is an example of inline "
@@ -376,8 +348,11 @@
         "type": "header",
         "text": {
             "type": "plain_text",
-            "text": "Code block"
+            "text": "Code block (second level heading)"
         }
+    },
+    {
+        "type": "divider"
     },
     {
         "type": "rich_text",
@@ -387,7 +362,7 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Code Block:",
+                        "text": "Code Block:\n\n",
                         "style": {
                             "italic": true
                         }
@@ -409,7 +384,7 @@
         "type": "header",
         "text": {
             "type": "plain_text",
-            "text": "This is another heading"
+            "text": "This is another heading (3rd level)"
         }
     },
     {
@@ -420,7 +395,7 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Bold, Italics, Strikethrough, and Underline:",
+                        "text": "Bold, Italics, Strikethrough, and Underline:\n\n",
                         "style": {
                             "italic": true
                         }
@@ -442,13 +417,7 @@
                                 }
                             }
                         ]
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_list",
-                "style": "bullet",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -460,13 +429,7 @@
                                 }
                             }
                         ]
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_list",
-                "style": "bullet",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -478,13 +441,7 @@
                                 }
                             }
                         ]
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_list",
-                "style": "bullet",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -501,7 +458,7 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Links:",
+                        "text": "\n\nLinks:\n\n",
                         "style": {
                             "italic": true
                         }
@@ -521,13 +478,7 @@
                                 "url": "https://mistune.lepture.com/en/latest/plugins.html"
                             }
                         ]
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_list",
-                "style": "bullet",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -545,7 +496,7 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Blockquotes:",
+                        "text": "\n\nBlockquotes:\n\n",
                         "style": {
                             "italic": true
                         }
@@ -558,6 +509,15 @@
                     {
                         "type": "text",
                         "text": "This is a blockquote. It can span multiple lines and is used to highlight a section of text."
+                    }
+                ]
+            },
+            {
+                "type": "rich_text_section",
+                "elements": [
+                    {
+                        "type": "text",
+                        "text": "\n"
                     }
                 ]
             },
@@ -585,16 +545,19 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Mentions:",
+                        "text": "\n\n\nMentions:",
                         "style": {
+                            "bold": true,
                             "italic": true
                         }
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
+                    {
+                        "type": "text",
+                        "text": " (4th level)\n\n\n",
+                        "style": {
+                            "bold": true
+                        }
+                    },
                     {
                         "type": "text",
                         "text": "Hey "
@@ -605,16 +568,11 @@
                     },
                     {
                         "type": "text",
-                        "text": ", check this out!"
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                        "text": ", check this out!\n\n\n"
+                    },
                     {
                         "type": "text",
-                        "text": "Preformatted text:",
+                        "text": "Preformatted text:\n\n",
                         "style": {
                             "italic": true
                         }
@@ -635,7 +593,7 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Horizontal Rule:",
+                        "text": "\n\nHorizontal Rule:",
                         "style": {
                             "italic": true
                         }
@@ -655,37 +613,22 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Tables (Note: Tables are not directly supported in Slack markdown, but here's how you might format it with spacing):",
+                        "text": "Tables (Note: Tables are not directly supported in Slack markdown, but here's how you might format it with spacing):\n\n\n",
                         "style": {
                             "italic": true
                         }
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
                     {
                         "type": "text",
-                        "text": "Column 1 | Column 2 | Column 3\n------- | -------- | --------\nRow 1   | Value 1  | Data 1\nRow 2   | Value 2  | Data 2"
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                        "text": "| Column 1 | Column 2 | Column 3 |\n| -------- | -------- | -------- |\n| Row 1    | Value 1  | Data 1   |\n| Row 2    | Value 2  | Data 2   |\n\n\n"
+                    },
                     {
                         "type": "text",
-                        "text": "Emojis:",
+                        "text": "Emojis:\n",
                         "style": {
                             "italic": true
                         }
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
                     {
                         "type": "emoji",
                         "name": "smile"
@@ -705,17 +648,20 @@
                     {
                         "type": "emoji",
                         "name": "tada"
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
                     {
                         "type": "text",
-                        "text": "Task Lists:",
+                        "text": "\n\n\n\nTask Lists:",
                         "style": {
+                            "bold": true,
                             "italic": true
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": " (5-th level)\n\n",
+                        "style": {
+                            "bold": true
                         }
                     }
                 ]
@@ -736,13 +682,7 @@
                                 "text": "Completed task"
                             }
                         ]
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_list",
-                "style": "bullet",
-                "elements": [
+                    },
                     {
                         "type": "rich_text_section",
                         "elements": [
@@ -763,32 +703,22 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Combination:",
+                        "text": "\n\nCombination:\n\n\n",
                         "style": {
                             "italic": true
                         }
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
                     {
                         "type": "text",
-                        "text": "This is bold and italicized.",
+                        "text": "This is bold and italicized.\n\n\n",
                         "style": {
                             "bold": true,
                             "italic": true
                         }
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
                     {
                         "type": "text",
-                        "text": "More code examples:",
+                        "text": "More code examples:\n\n",
                         "style": {
                             "italic": true
                         }
@@ -801,6 +731,15 @@
                     {
                         "type": "text",
                         "text": "function anotherExample() {\n  return \"JavaScript code\";\n}\n"
+                    }
+                ]
+            },
+            {
+                "type": "rich_text_section",
+                "elements": [
+                    {
+                        "type": "text",
+                        "text": "\n"
                     }
                 ]
             },
@@ -818,7 +757,7 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Final bullet to make sure it's really long!",
+                        "text": "\n\nFinal bullet to make sure it's really long!\n\n",
                         "style": {
                             "italic": true
                         }

@@ -7,16 +7,11 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Level 6 heading first test bold",
+                        "text": "Level 6 heading first test bold\n\n\n",
                         "style": {
                             "bold": true
                         }
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
                     {
                         "type": "text",
                         "text": "There should be no leading whitespace before this heading."
@@ -31,6 +26,9 @@
             "type": "plain_text",
             "text": "Heading Level 1 test bold"
         }
+    },
+    {
+        "type": "divider"
     },
     {
         "type": "rich_text",
@@ -52,6 +50,9 @@
             "type": "plain_text",
             "text": "Heading Level 2 test bold"
         }
+    },
+    {
+        "type": "divider"
     },
     {
         "type": "rich_text",
@@ -82,67 +83,37 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "This is the third heading."
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                        "text": "This is the third heading.\n\n\n"
+                    },
                     {
                         "type": "text",
-                        "text": "\n\nHeading Level 4 test bold",
+                        "text": "\nHeading Level 4 test bold\n\n\n",
                         "style": {
                             "bold": true
                         }
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
                     {
                         "type": "text",
-                        "text": "This is the forth heading."
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                        "text": "This is the forth heading.\n\n\n"
+                    },
                     {
                         "type": "text",
-                        "text": "\n\nHeading Level 5 test bold",
+                        "text": "\nHeading Level 5 test bold\n\n\n",
                         "style": {
                             "bold": true
                         }
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
                     {
                         "type": "text",
-                        "text": "This is the fifth heading."
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                        "text": "This is the fifth heading.\n\n\n"
+                    },
                     {
                         "type": "text",
-                        "text": "\n\nHeading Level 6 test bold",
+                        "text": "\nHeading Level 6 test bold\n\n\n",
                         "style": {
                             "bold": true
                         }
-                    }
-                ]
-            },
-            {
-                "type": "rich_text_section",
-                "elements": [
+                    },
                     {
                         "type": "text",
                         "text": "This is the sixth heading."

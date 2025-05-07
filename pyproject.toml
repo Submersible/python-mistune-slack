@@ -1,6 +1,6 @@
 [project]
 name = "mistune-slack"
-version = "0.1.1"
+version = "0.1.2"
 description = "Convert Markdown to Slack blocks - useful for chatbots"
 readme = "README.md"
 authors = [
