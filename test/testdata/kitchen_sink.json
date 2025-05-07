@@ -90,6 +90,10 @@
                 "indent": 2
             },
             {
+                "type": "rich_text_section",
+                "elements": []
+            },
+            {
                 "type": "rich_text_list",
                 "style": "bullet",
                 "elements": [
@@ -115,6 +119,10 @@
                 "indent": 3
             },
             {
+                "type": "rich_text_section",
+                "elements": []
+            },
+            {
                 "type": "rich_text_list",
                 "style": "ordered",
                 "elements": [
@@ -129,6 +137,10 @@
                     }
                 ],
                 "indent": 1
+            },
+            {
+                "type": "rich_text_section",
+                "elements": []
             },
             {
                 "type": "rich_text_list",
@@ -171,6 +183,10 @@
                 "indent": 1
             },
             {
+                "type": "rich_text_section",
+                "elements": []
+            },
+            {
                 "type": "rich_text_list",
                 "style": "ordered",
                 "elements": [
@@ -194,6 +210,10 @@
                     }
                 ],
                 "indent": 2
+            },
+            {
+                "type": "rich_text_section",
+                "elements": []
             },
             {
                 "type": "rich_text_list",
@@ -223,15 +243,6 @@
                                 "text": "Nested Lists (Mixed):"
                             }
                         ]
-                    },
-                    {
-                        "type": "rich_text_section",
-                        "elements": [
-                            {
-                                "type": "text",
-                                "text": "\n"
-                            }
-                        ]
                     }
                 ]
             },
@@ -252,6 +263,10 @@
                 "indent": 1
             },
             {
+                "type": "rich_text_section",
+                "elements": []
+            },
+            {
                 "type": "rich_text_list",
                 "style": "ordered",
                 "elements": [
@@ -266,6 +281,10 @@
                     }
                 ],
                 "indent": 2
+            },
+            {
+                "type": "rich_text_section",
+                "elements": []
             },
             {
                 "type": "rich_text_list",
@@ -284,6 +303,10 @@
                 "indent": 3
             },
             {
+                "type": "rich_text_section",
+                "elements": []
+            },
+            {
                 "type": "rich_text_list",
                 "style": "ordered",
                 "elements": [
@@ -298,6 +321,10 @@
                     }
                 ],
                 "indent": 4
+            },
+            {
+                "type": "rich_text_section",
+                "elements": []
             },
             {
                 "type": "rich_text_list",
@@ -593,7 +620,7 @@
                 "elements": [
                     {
                         "type": "text",
-                        "text": "\n\nHorizontal Rule:",
+                        "text": "\n\nHorizontal Rule:\n\n",
                         "style": {
                             "italic": true
                         }
@@ -610,10 +637,14 @@
         "elements": [
             {
                 "type": "rich_text_section",
+                "elements": []
+            },
+            {
+                "type": "rich_text_section",
                 "elements": [
                     {
                         "type": "text",
-                        "text": "Tables (Note: Tables are not directly supported in Slack markdown, but here's how you might format it with spacing):\n\n\n",
+                        "text": "\nTables (Note: Tables are not directly supported in Slack markdown, but here's how you might format it with spacing):\n\n\n",
                         "style": {
                             "italic": true
                         }
