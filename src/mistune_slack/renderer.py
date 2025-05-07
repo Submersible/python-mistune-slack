@@ -24,6 +24,7 @@ class SlackRenderer(mistune.BaseRenderer):
 
     HEADING_MAX_LENGTH = 150
     HEADING_OVERFLOW_MESSAGE = " (OVERFLOW)"
+    HEADING_USE_BOLD_GTE = 4
 
     BLOCK_CODE_SPILL_LANG_REGEXP = re.compile(
         r"""^\n*(?P<lang>
@@ -49,6 +50,18 @@ class SlackRenderer(mistune.BaseRenderer):
             else:
                 last_rich_elements = None
                 blocks.append(section)
+
+        # Strip and leading whitespace
+        if (
+            blocks
+            and blocks[0]["type"] == "rich_text"
+            and blocks[0]["elements"]
+            and blocks[0]["elements"][0]["type"] in {"rich_text_section", "rich_text_quote"}
+            and blocks[0]["elements"][0]["elements"]
+            and blocks[0]["elements"][0]["elements"][0]["type"] == "text"
+        ):
+            first_text = blocks[0]["elements"][0]["elements"][0]["text"]
+            blocks[0]["elements"][0]["elements"][0]["text"] = first_text.lstrip("\n")
         return blocks
 
     def render_tokens(self, tokens: Iterable[Dict[str, Any]], state: BlockState) -> list[dict]:  # type: ignore
@@ -72,9 +85,35 @@ class SlackRenderer(mistune.BaseRenderer):
         yield _add_style({"type": "emoji", "name": token["attrs"]["emoji"]}, state)
 
     def text(self, token, state: BlockState):
-        text = token["raw"].replace("``", "`")  # TODO there has to be a better way
+        text = token["raw"]
         if text:
             yield _add_style({"type": "text", "text": text}, state)
+
+    def image(self, token, state: BlockState):
+        raise NotImplementedError(f"Images not supported yet, unsure how to handle {token}")
+
+    def emphasis(self, token, state: BlockState):
+        yield from self.render_tokens(token["children"], _get_next_state(state, italic=True))
+
+    def strong(self, token, state: BlockState):
+        yield from self.render_tokens(token["children"], _get_next_state(state, bold=True))
+
+    def strikethrough(self, token, state: BlockState):
+        yield from self.render_tokens(token["children"], _get_next_state(state, strike=True))
+
+    def codespan(self, token, state: BlockState):
+        assert "raw" in token
+        assert "children" not in token
+        yield from self.text({"type": "text", "raw": token["raw"]}, _get_next_state(state, code=True))
+
+    def linebreak(self, token, state: BlockState):
+        yield {"type": "text", "text": "\n\n"}
+
+    def softbreak(self, token, state: BlockState):
+        yield {"type": "text", "text": "\n"}
+
+    def inline_html(self, token, state: BlockState):
+        yield from self.text({"type": "text", "raw": token["raw"]}, _get_next_state(state))
 
     def link(self, token, state: BlockState):
         children = self.render_tokens(token["children"], _get_next_state(state))
@@ -96,48 +135,37 @@ class SlackRenderer(mistune.BaseRenderer):
                 item["style"] = style
             yield item
 
-    def image(self, token, state: BlockState):
-        yield {"type": "text", "text": f"[@TODO image {token}]"}
-
-    def emphasis(self, token, state: BlockState):
-        yield from self.render_tokens(token["children"], _get_next_state(state, italic=True))
-
-    def strong(self, token, state: BlockState):
-        yield from self.render_tokens(token["children"], _get_next_state(state, bold=True))
-
-    def strikethrough(self, token, state: BlockState):
-        yield from self.render_tokens(token["children"], _get_next_state(state, strike=True))
-
-    def codespan(self, token, state: BlockState):
-        assert "raw" in token
-        assert "children" not in token
-        yield from self.render_token({"type": "text", "raw": token["raw"]}, _get_next_state(state, code=True))
-
-    def linebreak(self, token, state: BlockState):
-        yield {"type": "text", "text": "\n\n"}
-
-    def softbreak(self, token, state: BlockState):
-        yield {"type": "text", "text": "\n"}
-
-    def inline_html(self, token, state: BlockState):
-        yield from self.render_token({"type": "text", "raw": token["raw"]}, _get_next_state(state))
-
     #################### Block Level ####################
     def paragraph(self, token, state: BlockState):
-        children = self.render_tokens(token["children"], state)
         border = state.env.get("border", 0)
+        elements = self.render_tokens(token["children"], state)
+        elements = _collapse_rich_text_elements(elements)
         if border == 0:
-            yield {"type": "rich_text_section", "elements": children}
+            yield {"type": "rich_text_section", "elements": elements}
         else:
-            item = {"type": "rich_text_quote", "elements": children}
+            item = {"type": "rich_text_quote", "elements": elements}
             if border >= 2:
                 item["border"] = 1
             yield item
 
     def heading(self, token, state: BlockState):
-        # TODO make level >= 2 bold text (since Slack only supports 1 level of headings)
-        _level = token.get("attrs", {}).get("level", 1)
+        level = token["attrs"]["level"]
+        if level < self.HEADING_USE_BOLD_GTE:
+            yield from self._heading_block(token, state)
+        else:
+            yield from self._heading_bold(token, state)
 
+    def _heading_bold(self, token, state: BlockState):
+        token_paragraph = {"type": "paragraph", "children": token["children"]}
+        pargraph_list = list(self.paragraph(token_paragraph, _get_next_state(state, bold=True)))
+        assert len(pargraph_list) == 1 and pargraph_list[0]["type"] == "rich_text_section"
+        paragraph = pargraph_list[0]
+        elements = paragraph["elements"]
+        elements = [{"type": "text", "text": "\n\n"}, *elements]
+        elements = _collapse_rich_text_elements(elements)
+        yield {**paragraph, "elements": elements}
+
+    def _heading_block(self, token, state: BlockState):
         text = ""
 
         def walk(obj):
@@ -146,13 +174,13 @@ class SlackRenderer(mistune.BaseRenderer):
             if obj["type"] == "text":
                 before, after = "", ""
             elif obj["type"] == "emphasis":
-                before, after = "_", "_"
+                before, after = "", ""
             elif obj["type"] == "strong":
-                before, after = "**", "**"
+                before, after = "", ""
             elif obj["type"] == "strikethrough":
                 before, after = "~~", "~~"
             elif obj["type"] == "codespan":
-                before, after = "`", "`"
+                before, after = "", ""
             elif obj["type"] == "inline_html":
                 before, after = "", ""
             else:
@@ -175,23 +203,14 @@ class SlackRenderer(mistune.BaseRenderer):
         yield {"type": "header", "text": {"type": "plain_text", "text": text}}
 
     def blank_line(self, token, state: BlockState):
-        border = state.env.get("border", 0)
-        if border == 0:
-            yield {"type": "rich_text_section", "elements": [{"type": "text", "text": "\n"}]}
-        else:
-            item = {"type": "rich_text_quote", "elements": [{"type": "text", "text": "\n"}]}
-            if border >= 2:
-                item["border"] = 1
-            yield item
+        yield from []
 
     def thematic_break(self, token, state: BlockState):
         yield {"type": "divider"}
 
     def block_code(self, token, state: BlockState):
-        assert token["type"] == "block_code"
         _lang = token.get("attr", {}).get("info", None)
         text = token["raw"]
-
         match = self.BLOCK_CODE_SPILL_LANG_REGEXP.match(text)
         if match:
             _lang = _lang or match.group("lang")
@@ -209,16 +228,14 @@ class SlackRenderer(mistune.BaseRenderer):
         yield from self.render_tokens(token["children"], child_state)
 
     def block_html(self, token, state: BlockState):
-        yield from self.render_token(
-            {
-                "type": "block_code",
-                "raw": token["raw"],
-                "style": "fenced",
-                "marker": "```",
-                "attrs": {"info": "html"},
-            },
-            state,
-        )
+        token_block_code = {
+            "type": "block_code",
+            "raw": token["raw"],
+            "style": "fenced",
+            "marker": "```",
+            "attrs": {"info": "html"},
+        }
+        yield from self.block_code(token_block_code, state)
 
     def list(self, token, state: BlockState):
         list_indent = token["attrs"]["depth"]
@@ -251,6 +268,7 @@ class SlackRenderer(mistune.BaseRenderer):
             else:
                 raise NotImplementedError(f"Cannot create list item with child: {child}")
 
+        elements = _collapse_rich_text_elements(elements)
         item = {"type": "rich_text_list", "style": list_style, "elements": elements}
         if list_indent > 0:
             if list_indent > self.LIST_MAX_INDENT:
@@ -264,7 +282,7 @@ class SlackRenderer(mistune.BaseRenderer):
     def task_list_item(self, token, state: BlockState):
         token = token.copy()
         token["type"] = "list_item"
-        yield from self.render_token(token, state)
+        yield from self.list_item(token, state)
 
     def block_text(self, token, state: BlockState):
         try:
@@ -273,8 +291,9 @@ class SlackRenderer(mistune.BaseRenderer):
         except Exception as e:
             raise NotImplementedError(f"Block text can only be called from list item, got: {token}") from e
 
-        children = self.render_tokens(token["children"], state)
-        yield {"type": "rich_text_section", "elements": children}
+        elements = self.render_tokens(token["children"], state)
+        elements = _collapse_rich_text_elements(elements)
+        yield {"type": "rich_text_section", "elements": elements}
 
 
 def _get_next_state(state: BlockState, **kwargs) -> BlockState:
@@ -301,3 +320,32 @@ def _add_style(output, state: BlockState):
     if style:
         output["style"] = style
     return output
+
+
+def _is_all_newlines(text: str) -> bool:
+    return text.replace("\n", "") == ""
+
+
+def _collapse_rich_text_elements(elements: list[dict]) -> list[dict]:
+    collapsed = []
+    last_text_element = None
+    for item in elements:
+        if item["type"] == "text":
+            if last_text_element is None:
+                last_text_element = item
+                collapsed.append(item)
+            elif last_text_element.get("style") == item.get("style") or _is_all_newlines(item["text"]):
+                last_text_element["text"] += item["text"]
+            elif _is_all_newlines(last_text_element["text"]):
+                last_text_element["text"] += item["text"]
+                if "style" in item:
+                    last_text_element["style"] = item["style"]
+                else:
+                    last_text_element.pop("style", None)
+            else:
+                last_text_element = item
+                collapsed.append(item)
+        else:
+            last_text_element = None
+            collapsed.append(item)
+    return collapsed

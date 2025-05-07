@@ -12,6 +12,5 @@ def slack_markdown_renderer():
 
 
 def render_slack_blocks_from_markdown(markdown: str) -> list[dict]:
-    markdown = markdown.replace("\\`", "``")
     renderer = slack_markdown_renderer()
     return renderer(markdown)  # type: ignore

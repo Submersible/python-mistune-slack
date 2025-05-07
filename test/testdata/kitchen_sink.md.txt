@@ -1,3 +1,5 @@
+# This is a heading
+
 Okay, here's a demo output to test my markdown capabilities.
 
 1.  **Ordered List:**
@@ -29,12 +31,16 @@ Okay, here's a demo output to test my markdown capabilities.
 
 Here is an example of inline `code`.
 
+## Code block
+
 *Code Block:*
 
 ```
 def hello_world():
     print("Hello, world!")
 ```
+
+### This is another heading
 
 *Bold, Italics, Strikethrough, and Underline:*
 
@@ -45,7 +51,7 @@ def hello_world():
 
 *Links:*
 
-*   [Mistune Website](https://c.lepture.com/en/latest/plugins.html)
+*   [Mistune Website](https://mistune.lepture.com/en/latest/plugins.html)
 *   [Slack Formatting](https://api.slack.com/reference/surfaces/formatting)
 
 *Blockquotes:*

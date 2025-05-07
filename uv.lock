@@ -875,7 +875,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mistune", specifier = ">=3" },
+    { name = "mistune", specifier = ">=3,<4" },
     { name = "typing-extensions", specifier = ">=4.13.2" },
 ]
 
